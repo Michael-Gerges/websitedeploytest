@@ -1,44 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Submit Log Entry</title>
+  <meta charset="utf-8" />
+  <title>Submit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    form { display: flex; gap: 8px; }
+    input[type="text"] { flex: 1; padding: 8px; }
+    button { padding: 8px 12px; }
+    .status { margin-top: 12px; min-height: 1.2em; }
+    a { display: inline-block; margin-top: 16px; }
+  </style>
 </head>
 <body>
-  <h1>Submit Log Entry</h1>
-  <form id="log-form">
-    <input type="text" id="log-input" placeholder="Enter text" required>
+  <h1>Submit a value</h1>
+  <form id="form">
+    <input id="value" name="value" type="text" placeholder="Type something..." required />
     <button type="submit">Submit</button>
   </form>
-  <p id="message"></p>
-  <pre id="error-details"></pre>
-  <a href="logs.html">View All Submissions</a>
+  <div class="status" id="status"></div>
+  <a href="/submissions.html">View All Submissions →</a>
+
   <script>
-    const form = document.getElementById('log-form');
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const value = document.getElementById('log-input').value;
-      const response = await fetch('/.netlify/functions/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value })
-      });
-      const msg = document.getElementById('message');
-      const err = document.getElementById('error-details');
-      if (response.ok) {
-        msg.textContent = 'Saved!';
-        err.textContent = '';
-        form.reset();
-      } else {
-        let text = await response.text();
-        try {
-          const data = JSON.parse(text);
-          msg.textContent = data.error || 'Error submitting data';
-          err.textContent = JSON.stringify(data, null, 2);
-        } catch (e) {
-          msg.textContent = 'Error submitting data';
-          err.textContent = text;
+      const input = document.getElementById('value');
+      const statusEl = document.getElementById('status');
+      const value = input.value.trim();
+      if (!value) { statusEl.textContent = 'Please enter something.'; return; }
+
+      try {
+        const res = await fetch('/.netlify/functions/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ value })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Submission failed');
         }
+        input.value = '';
+        statusEl.textContent = 'Saved!';
+      } catch (err) {
+        statusEl.textContent = err.message;
       }
     });
   </script>
