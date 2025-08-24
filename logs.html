@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>All Submissions</title>
+</head>
+<body>
+  <h1>All Submissions</h1>
+  <ul id="log-list"></ul>
+  <a href="index.html">Back to form</a>
+  <script>
+    async function loadLogs() {
+      try {
+        const res = await fetch('/data/log.json?cache=' + Date.now());
+        const entries = await res.json();
+        const list = document.getElementById('log-list');
+        entries.forEach(entry => {
+          const li = document.createElement('li');
+          li.textContent = `${entry.time}: ${entry.value}`;
+          list.appendChild(li);
+        });
+      } catch (e) {
+        document.getElementById('log-list').textContent = 'Failed to load logs.';
+      }
+    }
+    loadLogs();
+  </script>
+</body>
+</html>
