@@ -11,6 +11,7 @@
     <button type="submit">Submit</button>
   </form>
   <p id="message"></p>
+  <pre id="error-details"></pre>
   <a href="logs.html">View All Submissions</a>
   <script>
     const form = document.getElementById('log-form');
@@ -23,11 +24,21 @@
         body: JSON.stringify({ value })
       });
       const msg = document.getElementById('message');
+      const err = document.getElementById('error-details');
       if (response.ok) {
         msg.textContent = 'Saved!';
+        err.textContent = '';
         form.reset();
       } else {
-        msg.textContent = 'Error submitting data';
+        let text = await response.text();
+        try {
+          const data = JSON.parse(text);
+          msg.textContent = data.error || 'Error submitting data';
+          err.textContent = JSON.stringify(data, null, 2);
+        } catch (e) {
+          msg.textContent = 'Error submitting data';
+          err.textContent = text;
+        }
       }
     });
   </script>
