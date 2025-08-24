@@ -11,7 +11,7 @@
   <script>
     async function loadLogs() {
       try {
-        const res = await fetch('/data/log.json?cache=' + Date.now());
+        const res = await fetch('/.netlify/functions/logs');
         const entries = await res.json();
         const list = document.getElementById('log-list');
         entries.forEach(entry => {
