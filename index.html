@@ -1,1 +1,35 @@
-
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Submit Log Entry</title>
+</head>
+<body>
+  <h1>Submit Log Entry</h1>
+  <form id="log-form">
+    <input type="text" id="log-input" placeholder="Enter text" required>
+    <button type="submit">Submit</button>
+  </form>
+  <p id="message"></p>
+  <a href="logs.html">View All Submissions</a>
+  <script>
+    const form = document.getElementById('log-form');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const value = document.getElementById('log-input').value;
+      const response = await fetch('/.netlify/functions/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value })
+      });
+      const msg = document.getElementById('message');
+      if (response.ok) {
+        msg.textContent = 'Saved!';
+        form.reset();
+      } else {
+        msg.textContent = 'Error submitting data';
+      }
+    });
+  </script>
+</body>
+</html>
