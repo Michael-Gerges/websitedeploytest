@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const logFile = path.join(__dirname, '..', '..', 'data', 'log.json');
+const dataDir = path.join(__dirname, '..', '..', 'data');
+const logFile = path.join(dataDir, 'log.json');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -26,6 +27,9 @@ exports.handler = async (event) => {
   }
 
   try {
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
     let entries = [];
     if (fs.existsSync(logFile)) {
       const content = fs.readFileSync(logFile, 'utf8');
