@@ -4,11 +4,19 @@ const path = require('path');
 const dataDir = path.join(__dirname, '..', '..', 'data');
 const logFile = path.join(dataDir, 'log.json');
 
+function listFilesystem() {
+  try {
+    return fs.readdirSync('/');
+  } catch (err) {
+    return [`Failed to read filesystem: ${err.message}`];
+  }
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      body: 'Method Not Allowed',
+      body: JSON.stringify({ error: 'Method Not Allowed', filesystem: listFilesystem() }),
     };
   }
 
@@ -22,7 +30,7 @@ exports.handler = async (event) => {
   } catch (err) {
     return {
       statusCode: 400,
-      body: 'Invalid request body',
+      body: JSON.stringify({ error: 'Invalid request body', details: err.message, filesystem: listFilesystem() }),
     };
   }
 
@@ -40,7 +48,7 @@ exports.handler = async (event) => {
   } catch (err) {
     return {
       statusCode: 500,
-      body: 'Failed to write log',
+      body: JSON.stringify({ error: 'Failed to write log', details: err.message, stack: err.stack, filesystem: listFilesystem() }),
     };
   }
 
