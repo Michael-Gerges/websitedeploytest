@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>All Submissions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+    ul { padding-left: 20px; }
+    li { margin: 6px 0; }
+    a { display: inline-block; margin-top: 16px; }
+    code { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>All Submissions</h1>
+  <div id="empty" hidden>No submissions yet.</div>
+  <ul id="list"></ul>
+  <a href="/">← Back</a>
+
+  <script>
+    async function load() {
+      const listEl = document.getElementById('list');
+      const emptyEl = document.getElementById('empty');
+      try {
+        const res = await fetch('/.netlify/functions/list');
+        const data = await res.json();
+        const entries = data.entries || [];
+        if (entries.length === 0) {
+          emptyEl.hidden = false;
+          return;
+        }
+        entries.forEach(line => {
+          const li = document.createElement('li');
+          // basic HTML-escape
+          li.innerHTML = '<code>' + line.replace(/&/g, '&amp;').replace(/</g,'&lt;') + '</code>';
+          listEl.appendChild(li);
+        });
+      } catch {
+        emptyEl.hidden = false;
+        emptyEl.textContent = 'Error loading submissions.';
+      }
+    }
+    load();
+  </script>
+</body>
+</html>
