@@ -1,41 +1,29 @@
-import { create } from '@netlify/blobs';
+import { getStore } from "@netlify/blobs";
 
-export async function handler(event, context) {
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method Not Allowed' }),
-    };
+const STORE_NAME = "submissions";        // a site-wide store
+const LOG_KEY = "logs/submissions.log";  // single "log file" key inside that store
+
+export default async (req) => {
+  if (req.method !== "POST") {
+    return new Response("Method Not Allowed", { status: 405 });
   }
 
-  let value;
-  try {
-    const body = JSON.parse(event.body);
-    value = body.value;
-    if (typeof value !== 'string') {
-      throw new Error('Invalid value');
-    }
-  } catch (err) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Invalid request body', details: err.message }),
-    };
+  const body = await req.json().catch(() => ({}));
+  const raw = (body?.value ?? "").toString().trim();
+  if (!raw) {
+    return Response.json({ ok: false, error: "Empty value" }, { status: 400 });
   }
 
-  try {
-    const blobs = create({ context });
-    const logStore = blobs.createClient({ name: 'function-logs' });
-    const logEntry = { value, time: new Date().toISOString() };
-    await logStore.setJSON(`log-${Date.now()}.json`, logEntry);
-  } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to write log', details: err.message }),
-    };
-  }
+  const store = getStore(STORE_NAME);
 
-  return {
-    statusCode: 200,
-    body: 'Logged',
-  };
-}
+  // Basic sanitation + length cap; keep it tiny for a demo
+  const clean = raw.replace(/[\r\n\t]/g, " ").slice(0, 1000);
+  const line = `${new Date().toISOString()} - ${clean}`;
+
+  // Naive append: read whole log, append, write back.
+  const existing = await store.get(LOG_KEY);     // string or null
+  const next = existing ? `${existing}\n${line}` : line;
+  await store.set(LOG_KEY, next);                // overwrite with new content
+
+  return Response.json({ ok: true });
+};
