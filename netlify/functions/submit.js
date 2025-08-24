@@ -1,22 +1,10 @@
-const fs = require('fs');
-const path = require('path');
+import { create } from '@netlify/blobs';
 
-const dataDir = path.join(__dirname, '..', '..', 'data');
-const logFile = path.join(dataDir, 'log.json');
-
-function listFilesystem() {
-  try {
-    return fs.readdirSync('/');
-  } catch (err) {
-    return [`Failed to read filesystem: ${err.message}`];
-  }
-}
-
-exports.handler = async (event) => {
+export async function handler(event, context) {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: 'Method Not Allowed', filesystem: listFilesystem() }),
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
     };
   }
 
@@ -30,25 +18,19 @@ exports.handler = async (event) => {
   } catch (err) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Invalid request body', details: err.message, filesystem: listFilesystem() }),
+      body: JSON.stringify({ error: 'Invalid request body', details: err.message }),
     };
   }
 
   try {
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    let entries = [];
-    if (fs.existsSync(logFile)) {
-      const content = fs.readFileSync(logFile, 'utf8');
-      entries = content ? JSON.parse(content) : [];
-    }
-    entries.push({ value, time: new Date().toISOString() });
-    fs.writeFileSync(logFile, JSON.stringify(entries, null, 2));
+    const blobs = create({ context });
+    const logStore = blobs.createClient({ name: 'function-logs' });
+    const logEntry = { value, time: new Date().toISOString() };
+    await logStore.setJSON(`log-${Date.now()}.json`, logEntry);
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to write log', details: err.message, stack: err.stack, filesystem: listFilesystem() }),
+      body: JSON.stringify({ error: 'Failed to write log', details: err.message }),
     };
   }
 
@@ -56,4 +38,4 @@ exports.handler = async (event) => {
     statusCode: 200,
     body: 'Logged',
   };
-};
+}
